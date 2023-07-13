@@ -163,7 +163,13 @@ def main():
                         dtype=np.float16)
     keypoint_score = np.zeros((num_frame, num_person, num_keypoint),
                               dtype=np.float16)
+    # keypoint = np.zeros((num_frame, 6, num_keypoint, 2),
+    #                     dtype=np.float16)
+    # keypoint_score = np.zeros((num_frame, 6, num_keypoint),
+    #                           dtype=np.float16)
     for i, poses in enumerate(pose_results):
+        if keypoint[i].shape != poses['keypoints'].shape:
+            continue
         keypoint[i] = poses['keypoints']
         keypoint_score[i] = poses['keypoint_scores']
 
