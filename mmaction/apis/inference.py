@@ -151,6 +151,13 @@ def detection_inference(det_config: Union[str, Path, mmengine.Config],
                                    pred_instance.scores > det_score_thr)
         bboxes = bboxes[valid_idx]
         scores = scores[valid_idx]
+        if bboxes is None or len(bboxes) == 0:
+            bboxes = np.array([[0, 0, 0, 0]], dtype=np.float32)
+            if with_score:
+                bboxes = np.concatenate((bboxes, scores[:, None]), axis=-1)
+            results.append(bboxes)
+            data_samples.append(det_data_sample)
+            continue
 
         if with_score:
             bboxes = np.concatenate((bboxes, scores[:, None]), axis=-1)
@@ -199,6 +206,8 @@ def pose_inference(pose_config: Union[str, Path, mmengine.Config],
             = inference_topdown(model, f, d[..., :4], bbox_format='xyxy')
         pose_data_sample = merge_data_samples(pose_data_samples)
         pose_data_sample.dataset_meta = model.dataset_meta
+        # if not hasattr(pose_data_sample, "pred_instances"):
+        #     continue
         poses = pose_data_sample.pred_instances.to_dict()
         results.append(poses)
         data_samples.append(pose_data_sample)
