@@ -255,7 +255,7 @@ def main():
 
     tmp_dir = tempfile.TemporaryDirectory()
     frame_paths, original_frames = frame_extract(
-        args.video, out_dir=tmp_dir.name)
+        args.video, out_dir=tmp_dir.name) # extract all frames
     num_frame = len(frame_paths)
     h, w, _ = original_frames[0].shape
 
