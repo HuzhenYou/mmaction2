@@ -150,6 +150,5 @@ mmaction/tools/*
 !projects/stad_tutorial/*.ipynb
 mmaction/.mim
 
-
 *.mp4
 cache

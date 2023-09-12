@@ -217,6 +217,8 @@ def pose_inference(pose_config: Union[str, Path, mmengine.Config, nn.Module],
             = inference_topdown(model, f, d[..., :4], bbox_format='xyxy')
         pose_data_sample = merge_data_samples(pose_data_samples)
         pose_data_sample.dataset_meta = model.dataset_meta
+        # if not hasattr(pose_data_sample, "pred_instances"):
+        #     continue
         poses = pose_data_sample.pred_instances.to_dict()
         results.append(poses)
         data_samples.append(pose_data_sample)

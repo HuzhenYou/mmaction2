@@ -16,6 +16,7 @@ from mmaction.apis import detection_inference
 from mmaction.registry import MODELS
 from mmaction.structures import ActionDataSample
 from mmaction.utils import frame_extract, get_str_type
+import utils
 
 try:
     import moviepy.editor as mpy
@@ -98,6 +99,26 @@ def visualize(frames, annotations, plate=plate_blue, max_num=5):
                                 FONTCOLOR, THICKNESS, LINETYPE)
 
     return frames_out
+
+
+def write_result2txt(frames, annotations, file_path):
+    h, w, _ = frames[0].shape
+    scale_ratio = np.array([w, h, w, h])
+    na = len(annotations)
+    boxes, labels = [], []
+    for i in range(na):
+        anno = annotations[i]
+        boxes_sub, labels_sub = [], []
+        for ann in anno:
+            box = ann[0]
+            label = ann[1]
+            box = (box * scale_ratio).astype(np.int64).tolist()
+            boxes_sub.append(box)
+            labels_sub.append(label)
+        boxes.append(boxes_sub)
+        labels.append(labels_sub)
+    txt_path = file_path.replace('mp4', 'txt')
+    utils.write2txt(txt_path, [boxes, labels])
 
 
 def load_label_map(file_path):
@@ -235,7 +256,7 @@ def main():
     tmp_dir = tempfile.TemporaryDirectory()
     tmp_dir.name = '/root/autodl-tmp/mmaction2/cache'
     frame_paths, original_frames = frame_extract(
-        args.video, out_dir=tmp_dir.name)
+        args.video, out_dir=tmp_dir.name) # extract all frames
     num_frame = len(frame_paths)
     h, w, _ = original_frames[0].shape
 
@@ -363,6 +384,7 @@ def main():
         cv2.imread(frame_paths[i - 1])
         for i in dense_timestamps(timestamps, dense_n)
     ]
+    write_result2txt(frames, results, args.video)
     print('Performing visualization')
     vis_frames = visualize(frames, results)
     vid = mpy.ImageSequenceClip([x[:, :, ::-1] for x in vis_frames],
