@@ -151,4 +151,5 @@ mmaction/tools/*
 mmaction/.mim
 
 *.mp4
+*.avi
 cache

@@ -1,4 +1,4 @@
-python demo/demo_spatiotemporal_det.py demo/demo.mp4 demo/demo_spatiotemporal_det.mp4 \
+python demo/demo_spatiotemporal_det.py demo/prd_1.mp4 demo/prd_1_spatiotemporal_det.avi \
     --config configs/detection/slowonly/slowonly_kinetics400-pretrained-r101_8xb16-8x8x1-20e_ava21-rgb.py \
     --checkpoint https://download.openmmlab.com/mmaction/detection/ava/slowonly_omnisource_pretrained_r101_8x8x1_20e_ava_rgb/slowonly_omnisource_pretrained_r101_8x8x1_20e_ava_rgb_20201217-16378594.pth \
     --det-config demo/demo_configs/faster-rcnn_r50_fpn_2x_coco_infer.py \

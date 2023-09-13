@@ -2,7 +2,7 @@
 import re
 from pathlib import Path
 
-from utils import replace_link
+from utils_ import replace_link
 
 DATASETS_ROOT = Path('dataset_zoo')  # Path to save generated paper pages.
 MODELZOO_TEMPLATE = """\

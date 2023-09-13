@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from pathlib import Path
 
-from utils import replace_link
+from utils_ import replace_link
 
 # This script reads /projects/*/README.md and generate projectzoo.md
 

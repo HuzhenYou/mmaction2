@@ -7,7 +7,7 @@ from pathlib import Path
 from modelindex.load_model_index import load
 from modelindex.models.Result import Result
 from tabulate import tabulate
-from utils import replace_link
+from utils_ import replace_link
 
 MMACT_ROOT = Path(__file__).absolute().parents[2]
 PAPERS_ROOT = Path('model_zoo')  # Path to save generated paper pages.

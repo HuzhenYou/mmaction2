@@ -16,7 +16,7 @@ from mmaction.apis import detection_inference
 from mmaction.registry import MODELS
 from mmaction.structures import ActionDataSample
 from mmaction.utils import frame_extract, get_str_type
-import utils
+import utils_
 
 try:
     import moviepy.editor as mpy
@@ -44,13 +44,13 @@ plate_green = plate_green.split('-')
 plate_green = [hex2color(h) for h in plate_green]
 
 
-def visualize(frames, annotations, plate=plate_blue, max_num=5):
+def visualize(frame_paths_l, annotations, out_filename, plate=plate_blue, max_num=5):
     """Visualize frames with predicted annotations.
 
     Args:
-        frames (list[np.ndarray]): Frames for visualization, note that
-            len(frames) % len(annotations) should be 0.
+        frame_paths_l(list[str]): The path of frames for visualization.
         annotations (list[list[tuple]]): The predicted results.
+        out_filename(str): The output filepath
         plate (str): The plate used for visualization. Default: plate_blue.
         max_num (int): Max number of labels to visualize for a person box.
             Default: 5.
@@ -59,13 +59,16 @@ def visualize(frames, annotations, plate=plate_blue, max_num=5):
     """
 
     assert max_num + 1 <= len(plate)
+    fourcc = cv2.VideoWriter_fourcc('M', 'P', '4', '2') 
+    
     plate = [x[::-1] for x in plate]
-    frames_out = cp.deepcopy(frames)
-    nf, na = len(frames), len(annotations)
+    # frames_out = cp.deepcopy(frames)
+    nf, na = len(frame_paths_l), len(annotations)
     assert nf % na == 0
-    nfpa = len(frames) // len(annotations)
+    nfpa = len(frame_paths_l) // len(annotations)
     anno = None
-    h, w, _ = frames[0].shape
+    h, w, _ = cv2.imread(frame_paths_l[0]).shape
+    vidwrite = cv2.VideoWriter(out_filename, fourcc, 25, (w, h)) 
     scale_ratio = np.array([w, h, w, h])
     for i in range(na):
         anno = annotations[i]
@@ -73,7 +76,7 @@ def visualize(frames, annotations, plate=plate_blue, max_num=5):
             continue
         for j in range(nfpa):
             ind = i * nfpa + j
-            frame = frames_out[ind]
+            frame = cv2.imread(frame_paths_l[ind])
             for ann in anno:
                 box = ann[0]
                 label = ann[1]
@@ -97,8 +100,8 @@ def visualize(frames, annotations, plate=plate_blue, max_num=5):
                     cv2.rectangle(frame, diag0, diag1, plate[k + 1], -1)
                     cv2.putText(frame, text, location, FONTFACE, FONTSCALE,
                                 FONTCOLOR, THICKNESS, LINETYPE)
-
-    return frames_out
+                    
+                    vidwrite.write(frame)
 
 
 def write_result2txt(frames, annotations, file_path):
@@ -118,7 +121,7 @@ def write_result2txt(frames, annotations, file_path):
         boxes.append(boxes_sub)
         labels.append(labels_sub)
     txt_path = file_path.replace('mp4', 'txt')
-    utils.write2txt(txt_path, [boxes, labels])
+    utils_.write2txt(txt_path, [boxes, labels])
 
 
 def load_label_map(file_path):
@@ -255,14 +258,18 @@ def main():
 
     tmp_dir = tempfile.TemporaryDirectory()
     tmp_dir.name = '/root/autodl-tmp/mmaction2/cache'
-    frame_paths, original_frames = frame_extract(
+    frame_paths = frame_extract(
         args.video, out_dir=tmp_dir.name) # extract all frames
     num_frame = len(frame_paths)
-    h, w, _ = original_frames[0].shape
+    h, w, _ = cv2.imread(frame_paths[0]).shape
 
     # resize frames to shortside
     new_w, new_h = mmcv.rescale_size((w, h), (args.short_side, np.Inf))
-    frames = [mmcv.imresize(img, (new_w, new_h)) for img in original_frames]
+    # frames = [mmcv.imresize(img, (new_w, new_h)) for img in original_frames]
+    for frame_path in frame_paths:
+        img = cv2.imread(frame_path) 
+        img = mmcv.imresize(img, (new_w, new_h))
+        cv2.imwrite(frame_path, img)
     w_ratio, h_ratio = new_w / w, new_h / h
 
     # Get clip_len, frame_interval and calculate center index of each clip
@@ -340,7 +347,8 @@ def main():
         start_frame = timestamp - (clip_len // 2 - 1) * frame_interval
         frame_inds = start_frame + np.arange(0, window_size, frame_interval)
         frame_inds = list(frame_inds - 1)
-        imgs = [frames[ind].astype(np.float32) for ind in frame_inds]
+        # imgs = [frames[ind].astype(np.float32) for ind in frame_inds]
+        imgs = [cv2.imread(frame_paths[ind]).astype(np.float32) for ind in frame_inds]
         _ = [mmcv.imnormalize_(img, **img_norm_cfg) for img in imgs]
         # THWC -> CTHW -> 1CTHW
         input_array = np.stack(imgs).transpose((3, 0, 1, 2))[np.newaxis]
@@ -362,8 +370,7 @@ def main():
                     continue
                 for j in range(proposal.shape[0]):
                     if scores[j, i] > args.action_score_thr:
-                        prediction[j].append((label_map[i], scores[j,
-                                                                   i].item()))
+                        prediction[j].append((label_map[i], scores[j, i].item()))
             predictions.append(prediction)
         prog_bar.update()
 
@@ -380,16 +387,17 @@ def main():
         return new_frame_inds.astype(np.int64)
 
     dense_n = int(args.predict_stepsize / args.output_stepsize)
-    frames = [
-        cv2.imread(frame_paths[i - 1])
-        for i in dense_timestamps(timestamps, dense_n)
-    ]
-    write_result2txt(frames, results, args.video)
+    # frames = [
+    #     cv2.imread(frame_paths[i - 1])
+    #     for i in dense_timestamps(timestamps, dense_n)
+    # ]
+    dense_timestamps_l = dense_timestamps(timestamps, dense_n)
+    write_result2txt(dense_timestamps_l, results, args.video)
     print('Performing visualization')
-    vis_frames = visualize(frames, results)
-    vid = mpy.ImageSequenceClip([x[:, :, ::-1] for x in vis_frames],
-                                fps=args.output_fps)
-    vid.write_videofile(args.out_filename)
+    vis_frames = visualize(frame_paths, results, args.out_filename)
+    # vid = mpy.ImageSequenceClip([x[:, :, ::-1] for x in vis_frames],
+                                # fps=args.output_fps)
+    # vid.write_videofile(args.out_filename)
 
     tmp_dir.cleanup()
 
