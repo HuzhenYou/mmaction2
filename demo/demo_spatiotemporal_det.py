@@ -252,11 +252,11 @@ def parse_args():
 
 def main():
     args = parse_args()
-
+    print('starting demo...')
     tmp_dir = tempfile.TemporaryDirectory()
     tmp_dir.name = '/root/autodl-tmp/mmaction2/cache'
     frame_paths, original_frames = frame_extract(
-        args.video, out_dir=tmp_dir.name) # extract all frames
+        args.video, out_dir=tmp_dir.name, short_side=args.short_side) # extract all frames
     num_frame = len(frame_paths)
     h, w, _ = original_frames[0].shape
 

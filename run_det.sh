@@ -8,4 +8,5 @@ python demo/demo_spatiotemporal_det.py demo/prd_1.mp4 demo/prd_1_spatiotemporal_
     --label-map tools/data/ava/label_map.txt \
     --predict-stepsize 8 \
     --output-stepsize 4 \
-    --output-fps 6
+    --output-fps 6 \
+    --short-side 512

@@ -57,6 +57,7 @@ def frame_extract(video_path: str,
     frames = []
     frame_paths = []
     flag, frame = vid.read()
+    print('ori shpae', frame.shape)
     cnt = 0
     new_h, new_w = None, None
     while flag:
@@ -65,7 +66,9 @@ def frame_extract(video_path: str,
                 h, w, _ = frame.shape
                 new_w, new_h = mmcv.rescale_size((w, h), (short_side, np.Inf))
             frame = mmcv.imresize(frame, (new_w, new_h))
-
+            
+        print('new shpae', frame.shape)
+        cv2.imwrite('current_frame.jpg', frame)
         frames.append(frame)
         frame_path = frame_tmpl.format(cnt + 1)
         frame_paths.append(frame_path)
